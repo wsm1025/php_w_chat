@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <link rel="icon" href="b2.ico"  type="image/x-icon" >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天室</title>
+    <style>
+        body {
+            background: gainsboro;
+            /* background: url(https://api.ixiaowai.cn/api/api.php); */
+        }
+
+        h1 {
+            color: skyblue;
+            text-align: center;
+        }
+
+        .main {
+            margin: 0 auto;
+            height: 540px;
+            width: 840px;
+            box-shadow: 10px 0px 10px 10px gray;
+            /* border: 1px solid red; */
+        }
+
+        .list {
+            margin-top: 30px;
+            overflow: auto;
+            height: 400px;
+            border-bottom: 2px solid black;
+        }
+
+        .list-son {
+            margin: 10px auto;
+            padding: 10px;
+            min-width: 460px;
+            word-wrap: break-word;
+            border: 1px solid skyblue;
+        }
+
+        textarea {
+            margin: 10px 20px;
+            resize: none;
+        }
+
+        .btn_sub {
+            float: right;
+            border-radius: 5px;
+            outline: none;
+            border: none;
+            width: 140px;
+            height: 20px;
+            margin: 60px 60px;
+        }
+
+        .left {
+            float: left;
+        }
+
+        .right {
+            float: right;
+        }
+        .auto{
+            margin: 10px 140px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 onclick="wsm.removeCookie('info');location.reload();">千锋聊天室(点击切换角色)</h1>
+    <div class="main" style="display: none;">
+        <div class="list">
+            <div class="list-son left auto">
+                <span class="name">wsm</span>
+                <span class="time">2021年3月4日13:41:40</span>
+                <div class="say">
+                    欢迎来到千锋病友交流群
+                </div>
+            </div>
+        </div>
+        <div class="content">
+            <textarea name="info" id="info" cols="60" rows="5"></textarea>
+            <input type="submit" class="btn_sub" value="点击发送(ctrl+enter)">
+        </div>
+    </div>
+    <a href="messagelook.php">查看聊天信息</a>
+</body>
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="id.php"></script>
+<script src="tools.js"></script>
+<script>
+    if (wsm.getCookie('info') != undefined && wsm.getCookie('info') != 'null') {
+        name = wsm.getCookie('info');
+        alert('欢迎回来,' + name);
+    } else {
+        var name = prompt('请输入账号');
+        if (name == "null" || name == "") {
+            name = "匿名";
+        }
+        wsm.setCookie('info', name, 1000);
+    }
+    $(".main").show();
+    setInterval(() => {
+        getmessage()
+    }, 1500)
+    $(".btn_sub").click(() => {
+        addMessageright();
+        sendmessage();
+    })
+    function addMessageright() {
+        content = html2Escape(jQuery("#info").val().trim());
+        var str = `
+        <div class="list-son right">
+                <span class="name">${name}</span>
+                <span class="time">${timeStamp2String(new Date().getTime())}</span>
+                <div class="say">
+                    ${content}
+                </div>
+            </div>`;
+        $(".list").append(str);
+        //元素最底部
+        $('.list').scrollTop($('.list').prop("scrollHeight"), 200);
+    }
+
+    function timeStamp2String(time) {
+        var datetime = new Date();
+        datetime.setTime(time);
+        var year = datetime.getFullYear();
+        var month = datetime.getMonth() + 1 < 10 ? "0" + (datetime.getMonth() + 1) : datetime.getMonth() + 1;
+        var date = datetime.getDate() < 10 ? "0" + datetime.getDate() : datetime.getDate();
+        var hour = datetime.getHours() < 10 ? "0" + datetime.getHours() : datetime.getHours();
+        var minute = datetime.getMinutes() < 10 ? "0" + datetime.getMinutes() : datetime.getMinutes();
+        var second = datetime.getSeconds() < 10 ? "0" + datetime.getSeconds() : datetime.getSeconds();
+        return year + "-" + month + "-" + date + " " + hour + ":" + minute + ":" + second;
+    }
+    function addMessageleft(data) {
+        content = html2Escape(`${data.message}`);
+        var str = `
+        <div class="list-son left">
+                <span class="name">${data.nickname}</span>
+                <span class="time">${data.createTime}</span>
+                <div class="say">
+                    ${content}
+                </div>
+            </div>`;
+        $(".list").append(str);
+        //元素最底部
+        $('.list').scrollTop($('.list').prop("scrollHeight"), 200);
+    }
+    function getmessage() {
+        $.ajax({
+            url: `message.php?id=${id}`,
+            dataType: 'json'
+        }).then(res => {
+            if (res.length == 0) {
+                return false;
+            }
+            if (res[0].id <= id) {
+                return
+            } else {
+                for (var i = 0; i < res.length; i++) {
+                    addMessageleft(res[i])
+                }
+                id = res[0].id - 0;
+            }
+        })
+    }
+    function html2Escape(sHtml) {
+        return sHtml.replace(/[<>&"]/g, function (c) { return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; });
+    }
+    function sendmessage() {
+        $('.auto').hide();
+        if ($("#info").val().trim() === "") {
+            $("#info").val($("#info").val().trim())
+            alert("请输入内容");
+        } else {
+            content = html2Escape(`${jQuery('#info').val().trim()}`)
+            $.ajax({
+                url: 'sendmessage.php',
+                method: 'post',
+                data: {
+                    "name": `${name}`,
+                    "content": content
+                },
+                dataType: 'json'
+            }).then(res => {
+                id = res.id - 0;
+                jQuery('#info').val('')
+            })
+        }
+    }
+    $("textarea")[0].addEventListener('keydown', function (e) {
+            e = e ? e : window.event;
+            var keyCode = e.which ? e.which : e.keyCode;
+            if (e.ctrlKey &&keyCode == 13) {
+                e.preventDefault();//为了兼容IE8
+                e.returnValue = false;
+                if ($("#info").val().trim() === "") {
+                    $("#info").val($("#info").val().trim())
+                    alert("请输入内容");
+                  }else{
+                    sendmessage();
+                    addMessageright();
+                }
+            }
+    });
+</script>
+
+</html>
