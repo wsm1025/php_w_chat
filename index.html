@@ -33,11 +33,12 @@
         }
 
         .list-son {
-            margin: 10px auto;
+            margin: 10px 10px 0 10px;
             padding: 10px;
             min-width: 460px;
             word-wrap: break-word;
             border: 1px solid skyblue;
+            border-radius: 10px;
         }
 
         textarea {
@@ -66,9 +67,11 @@
             margin: 10px 140px;
             text-align: center;
         }
+        .say{
+            margin-top: 10px;
+        }
     </style>
 </head>
-
 <body>
     <h1 onclick="wsm.removeCookie('info');location.reload();">千锋聊天室(点击切换角色)</h1>
     <div class="main" style="display: none;">
@@ -141,7 +144,8 @@
         var str = `
         <div class="list-son left">
                 <span class="name">${data.nickname}</span>
-                <span class="time">${data.createTime}</span>
+                <span class="time">${data.createTime}</span>&nbsp;&nbsp;&nbsp;
+                <span class="ip">${data.ip}</span>
                 <div class="say">
                     ${content}
                 </div>
@@ -164,7 +168,7 @@
                 for (var i = 0; i < res.length; i++) {
                     addMessageleft(res[i])
                 }
-                id = res[0].id - 0;
+                id = res[res.length-1].id - 0;
             }
         })
     }
@@ -192,6 +196,7 @@
             })
         }
     }
+    
     $("textarea")[0].addEventListener('keydown', function (e) {
             e = e ? e : window.event;
             var keyCode = e.which ? e.which : e.keyCode;
